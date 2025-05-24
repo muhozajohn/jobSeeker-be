@@ -1,0 +1,164 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  phone     String?
+  avatar    String?
+  role      Role
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  recruiter Recruiter?
+  worker    Worker?
+  jobs      Job[]      // Jobs created by recruiter
+  applications Application[] // Applications from workers
+  workAssignments WorkAssignment[] // Active work assignments for workers
+  recruiterAssignments WorkAssignment[] @relation("RecruiterAssignments") // Assignments managed by recruiter
+}
+
+enum Role {
+  ADMIN
+  RECRUITER
+  WORKER
+}
+
+model Recruiter {
+  id          Int           @id @default(autoincrement())
+  userId      Int           @unique
+  user        User          @relation(fields: [userId], references: [id])
+  companyName String?       // Company name if company recruiter
+  type        RecruiterType
+  description String?
+  location    String?
+  website     String?
+  verified    Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+enum RecruiterType {
+  COMPANY
+  GROUP
+  INDIVIDUAL
+}
+
+model Worker {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @unique
+  user        User     @relation(fields: [userId], references: [id])
+  location    String?
+  experience  String?
+  skills      String?
+  resume      String?  // File path or URL
+  available   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model JobCategory {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique // e.g., "Teacher", "Cleaner", "Housemaid", "Security", "Cook"
+  description String?
+  createdAt   DateTime @default(now())
+
+  // Relationships
+  jobs Job[]
+}
+
+model Job {
+  id          Int         @id @default(autoincrement())
+  title       String
+  description String
+  location    String?
+  salary      Int?
+  salaryType  SalaryType? @default(MONTHLY)
+  requirements String?
+  workingHours String?    // e.g., "8:00 AM - 12:00 PM" or "Flexible"
+  isActive    Boolean     @default(true)
+  allowMultiple Boolean   @default(true) // Allow worker to have multiple jobs
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relationships
+  category     JobCategory @relation(fields: [categoryId], references: [id])
+  categoryId   Int
+  recruiter    User        @relation(fields: [recruiterId], references: [id])
+  recruiterId  Int
+  applications Application[]
+  workAssignments WorkAssignment[]
+}
+
+enum SalaryType {
+  HOURLY
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+model Application {
+  id        Int               @id @default(autoincrement())
+  message   String?           // Cover message from worker
+  status    ApplicationStatus @default(PENDING)
+  appliedAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  // Relationships
+  job       Job    @relation(fields: [jobId], references: [id])
+  jobId     Int
+  worker    User   @relation(fields: [workerId], references: [id])
+  workerId  Int
+
+  @@unique([jobId, workerId]) // Prevent duplicate applications
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}
+
+// New model to track active work assignments
+model WorkAssignment {
+  id          Int               @id @default(autoincrement())
+  startTime   DateTime?         // When work starts (e.g., 8:00 AM)
+  endTime     DateTime?         // When work ends (e.g., 12:00 PM)
+  workDate    DateTime          // Which date the work is for
+  status      AssignmentStatus  @default(ACTIVE)
+  notes       String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  // Relationships
+  job         Job              @relation(fields: [jobId], references: [id])
+  jobId       Int
+  worker      User             @relation(fields: [workerId], references: [id])
+  workerId    Int
+  recruiter   User             @relation("RecruiterAssignments", fields: [recruiterId], references: [id])
+  recruiterId Int
+}
+
+enum AssignmentStatus {
+  ACTIVE      // Currently working this job
+  COMPLETED   // Finished the work
+  CANCELLED   // Assignment cancelled
+  PAUSED      // Temporarily paused
+}
