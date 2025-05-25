@@ -1,9 +1,10 @@
+markdown
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
 
 <p align="center">
-  A modern Events venue management system built with <a href="http://nodejs.org" target="_blank">NestJS</a> and <a href="https://www.prisma.io/" target="_blank">Prisma</a>.
+  A modern job recruitment platform built with <a href="http://nodejs.org" target="_blank">NestJS</a> and <a href="https://www.prisma.io/" target="_blank">Prisma</a>.
 </p>
 
 <p align="center">
@@ -15,16 +16,17 @@
 
 ## Description
 
-"The Knot Events" is a comprehensive wedding venue management platform built with NestJS and Prisma. This application helps venue owners and event planners manage bookings, client information, venue details, and event schedules.
+JobConnect is a comprehensive job recruitment platform connecting workers (teachers, cleaners, housemaids, security personnel, cooks) with recruiters (individuals, groups, or companies). The platform facilitates job postings, applications, and work assignments management.
 
 ## Features
 
-- User authentication and role-based access control
-- Venue management and booking system
-- Event scheduling and calendar integration
-- Client relationship management
-- Invoicing and payment tracking
-- Customizable event templates
+- **User Management**: Three distinct roles (Admin, Recruiter, Worker)
+- **Recruiter Profiles**: Support for individual, group, and company recruiters
+- **Worker Profiles**: Skills, experience, availability tracking
+- **Job Listings**: Categorized job postings with flexible salary options
+- **Application System**: Workers can apply to jobs with status tracking
+- **Work Assignments**: Schedule and manage active work assignments
+- **Authentication**: Secure JWT-based authentication
 
 ## Technology Stack
 
@@ -32,11 +34,23 @@
 - **Database**: PostgreSQL
 - **ORM**: Prisma
 - **Authentication**: JWT
-- **Deployment**: Docker & Render
+- **API Documentation**: Swagger/OpenAPI
+
+## Data Models
+
+The system implements the following core models:
+
+- **User**: Base user with authentication (Admin, Recruiter, Worker roles)
+- **Recruiter**: Extended profile for recruiters (individuals, groups, companies)
+- **Worker**: Extended profile for workers with skills and availability
+- **JobCategory**: Categories like Teacher, Cleaner, Housemaid, etc.
+- **Job**: Job postings with salary and requirements
+- **Application**: Worker applications to jobs
+- **WorkAssignment**: Active work assignments with scheduling
 
 ## Project Setup
 
-```bash
+
 # Install dependencies
 $ npm install
 
@@ -48,78 +62,53 @@ $ npm run migrate
 
 # Seed the database with initial data
 $ npm run seed
-```
+Environment Configuration
+Create a .env file in the root directory with the following variables:
 
-## Environment Configuration
+# Database Configuration
+DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?schema=public"
 
-Create a `.env` file in the root directory with the following variables:
+# Local Development (default values)
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=jobconnect
 
-```
-# Production Database
-DATABASE_URL="postgresql://${PROD_DATABASE_USERNAME}:${PROD_DATABASE_PASSWORD}@${PROD_DATABASE_HOST}:${PROD_DATABASE_PORT}/${PROD_DATABASE_NAME}?sslmode=require"
-
-# Production Database connection details
-PROD_DATABASE_HOST=your_production_host
-PROD_DATABASE_PORT=your_production_port
-PROD_DATABASE_USERNAME=your_production_username
-PROD_DATABASE_PASSWORD=your_production_password
-PROD_DATABASE_NAME=your_production_dbname
-
-# Local Database connection details
-LOCAL_DATABASE_HOST=localhost
-LOCAL_DATABASE_PORT=5432
-LOCAL_DATABASE_USERNAME=postgres
-LOCAL_DATABASE_PASSWORD=postgres
-LOCAL_DATABASE_NAME=knotesevents
-
-# JWT settings
-JWT_SECRET=your_secure_jwt_secret
+# JWT Configuration
+JWT_SECRET=your_secure_jwt_secret_here
 JWT_EXPIRATION=1d
 
-# Cloudinary
-CLOUDINARY_CLOUD_NAME="xyz"
-CLOUDINARY_API_KEY="xyz"
-CLOUDINARY_API_SECRET="xy-FoqzdwcbRSo"
-```
-
-## Database Management
-
-```bash
+# Optional File Upload Configuration
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+Database Management
+bash
 # Generate Prisma client
 $ npm run generate
 
 # Create and apply migrations
-$ pnpm run migrate -- --name name_of_your_migration
+$ npm run migrate -- --name name_of_your_migration
 
-# Apply migrations in production
+# Apply pending migrations
 $ npm run migrate:deploy
 
-# Push schema changes without migrations
-$ npm run db:push
-
-# Reset database (drop all tables and reapply migrations)
+# Reset database (development only)
 $ npm run reset
 
-# Open Prisma Studio (database GUI)
+# Open Prisma Studio (GUI for database)
 $ npm run studio
-```
-
-## Running the Application
-
-```bash
+Running the Application
+bash
 # Development mode
-$ npm run start
-
-# Watch mode
 $ npm run start:dev
 
-# Production mode
+# Production build
+$ npm run build
 $ npm run start:prod
-```
-
-## Testing
-
-```bash
+Testing
+bash
 # Unit tests
 $ npm run test
 
@@ -128,37 +117,26 @@ $ npm run test:e2e
 
 # Test coverage
 $ npm run test:cov
-```
+API Documentation
+Once the application is running, access the Swagger UI at:
 
-## Deployment
-
-When you're ready to deploy your application to production:
-
-```bash
-# Build the application
-$ npm run build
-
-# Apply migrations in production
-$ npm run migrate:deploy
-```
-
-## API Documentation
-
-Once the application is running, you can access the Swagger API documentation at:
-```
 http://localhost:3000/api
-```
+Deployment
+For production deployment:
 
-## Resources
+Set up your production database and update .env
 
-- [NestJS Documentation](https://docs.nestjs.com)
-- [Prisma Documentation](https://www.prisma.io/docs)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+Build the application:
 
-## Support
+bash
+npm run build
+Apply migrations:
 
-For support, please open an issue in the repository or contact the development team.
+bash
+npm run migrate:deploy
+Start the production server:
 
-## License
-
-This project is [MIT licensed](LICENSE).
+bash
+npm run start:prod
+License
+This project is MIT licensed.
