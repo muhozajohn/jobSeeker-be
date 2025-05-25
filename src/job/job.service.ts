@@ -4,14 +4,14 @@ import { UpdateJobDto } from './dto/update-job.dto';
 import { Prisma, SalaryType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ErrorHandlerService } from '../utils/error.utils';
-import { createSuccessResponse } from '../utils/response.utils';
+import { badRequestError, createSuccessResponse, notFoundError } from '../utils/response.utils';
 
 @Injectable()
 export class JobService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly errorHandler: ErrorHandlerService,
-  ) {}
+  ) { }
 
   async create(createJobDto: CreateJobDto) {
     try {
@@ -130,12 +130,27 @@ export class JobService {
       });
 
       if (!existingJob) {
-        return this.errorHandler.handleError(
-          { code: 404, message: 'Job not found' },
-          'JobService',
-          'update',
-        );
+        return notFoundError('Job not found')
       }
+
+      //  message: 'Category or recruiter not found' 
+
+      const existingCategory = await this.prisma.jobCategory.findUnique({
+        where: { id: updateJobDto.categoryId },
+      });
+
+      if (!existingCategory) {
+        return notFoundError('Job not found')
+      }
+
+      const existingrecruiter = await this.prisma.recruiter.findUnique({
+        where: { id: updateJobDto.recruiterId },
+      });
+
+      if (!existingrecruiter) {
+        return notFoundError('Recruiter not found')
+      }
+
 
       const updatedJob = await this.prisma.job.update({
         where: { id },
@@ -155,15 +170,6 @@ export class JobService {
 
       return createSuccessResponse('Job updated successfully', updatedJob);
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2003') {
-          return this.errorHandler.handleError(
-            { code: 404, message: 'Category or recruiter not found' },
-            'JobService',
-            'update',
-          );
-        }
-      }
       return this.errorHandler.handleError(
         error,
         'JobService',
@@ -180,11 +186,7 @@ export class JobService {
       });
 
       if (!existingJob) {
-        return this.errorHandler.handleError(
-          { code: 404, message: 'Job not found' },
-          'JobService',
-          'remove',
-        );
+        return notFoundError('Job not found')
       }
 
       // Check if job has applications or assignments
@@ -199,11 +201,7 @@ export class JobService {
       });
 
       if (hasDependencies) {
-        return this.errorHandler.handleError(
-          { code: 400, message: 'Cannot delete job with existing applications or assignments' },
-          'JobService',
-          'remove',
-        );
+        return badRequestError('Cannot delete job with existing applications or assignments')
       }
 
       await this.prisma.job.delete({
