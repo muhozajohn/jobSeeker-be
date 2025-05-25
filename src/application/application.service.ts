@@ -4,14 +4,14 @@ import { UpdateApplicationDto } from './dto/update-application.dto';
 import { Prisma, ApplicationStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ErrorHandlerService } from '../utils/error.utils';
-import { createSuccessResponse } from '../utils/response.utils';
+import { conflictError, createSuccessResponse, notFoundError , badRequestError ,  } from '../utils/response.utils';
 
 @Injectable()
 export class ApplicationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly errorHandler: ErrorHandlerService,
-  ) {}
+  ) { }
 
   async create(createApplicationDto: CreateApplicationDto) {
     try {
@@ -26,12 +26,31 @@ export class ApplicationService {
       });
 
       if (existingApplication) {
-        return this.errorHandler.handleError(
-          { code: 409, message: 'Application already exists for this job and worker' },
-          'ApplicationService',
-          'create',
-        );
+        return conflictError("Application already exists for this job and worker")
       }
+
+      // Job or worker not found
+
+      //  check if jobId Exist
+      const findJobId = await this.prisma.job.findFirst({
+        where: {
+          id: createApplicationDto.jobId
+        }
+      });
+      if (!findJobId) {
+        return notFoundError("Job not found")
+      }
+      //  check if workerId Exist
+      const findworkerId = await this.prisma.worker.findFirst({
+        where: {
+          id: createApplicationDto.workerId
+        }
+      });
+      if (!findworkerId) {
+        return notFoundError("worker not found")
+      }
+
+
 
       const application = await this.prisma.application.create({
         data: {
@@ -63,15 +82,6 @@ export class ApplicationService {
 
       return createSuccessResponse('Application created successfully', application);
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2003') {
-          return this.errorHandler.handleError(
-            { code: 404, message: 'Job or worker not found' },
-            'ApplicationService',
-            'create',
-          );
-        }
-      }
       return this.errorHandler.handleError(
         error,
         'ApplicationService',
@@ -142,11 +152,7 @@ export class ApplicationService {
       });
 
       if (!application) {
-        return this.errorHandler.handleError(
-          { code: 404, message: 'Application not found' },
-          'ApplicationService',
-          'findOne',
-        );
+        return notFoundError('Application not found')
       }
 
       return createSuccessResponse('Application retrieved successfully', application);
@@ -167,11 +173,28 @@ export class ApplicationService {
       });
 
       if (!existingApplication) {
-        return this.errorHandler.handleError(
-          { code: 404, message: 'Application not found' },
-          'ApplicationService',
-          'update',
-        );
+        return notFoundError('Application not found')
+      }
+
+      // Job or worker not found
+
+      //  check if jobId Exist
+      const findJobId = await this.prisma.job.findFirst({
+        where: {
+          id: updateApplicationDto.jobId
+        }
+      });
+      if (!findJobId) {
+        return notFoundError("Job not found")
+      }
+      //  check if workerId Exist
+      const findworkerId = await this.prisma.worker.findFirst({
+        where: {
+          id: updateApplicationDto.workerId
+        }
+      });
+      if (!findworkerId) {
+        return notFoundError("worker not found")
       }
 
       const updatedApplication = await this.prisma.application.update({
@@ -195,22 +218,11 @@ export class ApplicationService {
 
       return createSuccessResponse('Application updated successfully', updatedApplication);
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2003') {
-          return this.errorHandler.handleError(
-            { code: 404, message: 'Job or worker not found' },
-            'ApplicationService',
-            'update',
-          );
-        }
-        if (error.code === 'P2002') {
-          return this.errorHandler.handleError(
-            { code: 409, message: 'Application already exists for this job and worker' },
-            'ApplicationService',
-            'update',
-          );
-        }
+
+      if (error.code === 'P2002') {
+        return conflictError('Application already exists for this job and worker');
       }
+
       return this.errorHandler.handleError(
         error,
         'ApplicationService',
@@ -318,11 +330,7 @@ export class ApplicationService {
       });
 
       if (!existingApplication) {
-        return this.errorHandler.handleError(
-          { code: 404, message: 'Application not found' },
-          'ApplicationService',
-          'updateStatus',
-        );
+        return conflictError('Application not found')
       }
 
       const updatedApplication = await this.prisma.application.update({

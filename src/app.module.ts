@@ -12,13 +12,14 @@ import { WorkerModule } from './worker/worker.module';
 import { JobCategoryModule } from './job-category/job-category.module';
 import { JobModule } from './job/job.module';
 import { ApplicationModule } from './application/application.module';
+import { WorkAssignmentModule } from './work-assignment/work-assignment.module';
 
 
 
 @Module({
   imports: [ConfigModule.forRoot({
     isGlobal: true,
-  }), PrismaModule, AuthModule, UsersModule, CloudinaryModule, UtilsModule , AuthModule, RecruiterModule, WorkerModule, JobCategoryModule, JobModule, ApplicationModule],
+  }), PrismaModule, AuthModule, UsersModule, CloudinaryModule, UtilsModule , AuthModule, RecruiterModule, WorkerModule, JobCategoryModule, JobModule, ApplicationModule, WorkAssignmentModule],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -4,31 +4,33 @@ import { UpdateJobCategoryDto } from './dto/update-job-category.dto';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ErrorHandlerService } from '../utils/error.utils';
-import { createSuccessResponse } from '../utils/response.utils';
+import { badRequestError, createSuccessResponse, notFoundError } from '../utils/response.utils';
 
 @Injectable()
 export class JobCategoryService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly errorHandler: ErrorHandlerService,
-  ) {}
+  ) { }
 
   async create(createJobCategoryDto: CreateJobCategoryDto) {
     try {
+
+      //  check if name Exist
+      const findName = await this.prisma.jobCategory.findFirst({
+        where: {
+          name: createJobCategoryDto.name
+        }
+      });
+      if (!findName) {
+        return notFoundError('Job category with this name already exists')
+      }
+
       const jobCategory = await this.prisma.jobCategory.create({
         data: createJobCategoryDto,
       });
       return createSuccessResponse('Job category created successfully', jobCategory);
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2002') {
-          return this.errorHandler.handleError(
-            { code: 409, message: 'Job category with this name already exists' },
-            'JobCategoryService',
-            'create',
-          );
-        }
-      }
       return this.errorHandler.handleError(
         error,
         'JobCategoryService',
@@ -59,11 +61,7 @@ export class JobCategoryService {
       });
 
       if (!jobCategory) {
-        return this.errorHandler.handleError(
-          { code: 404, message: 'Job category not found' },
-          'JobCategoryService',
-          'findOne',
-        );
+        return notFoundError('Job category not found')
       }
 
       return createSuccessResponse('Job category retrieved successfully', jobCategory);
@@ -84,11 +82,17 @@ export class JobCategoryService {
       });
 
       if (!existingCategory) {
-        return this.errorHandler.handleError(
-          { code: 404, message: 'Job category not found' },
-          'JobCategoryService',
-          'update',
-        );
+        return notFoundError('Job category not found')
+      }
+
+         //  check if name Exist
+      const findName = await this.prisma.jobCategory.findFirst({
+        where: {
+          name: updateJobCategoryDto.name
+        }
+      });
+      if (!findName) {
+        return notFoundError('Job category with this name already exists')
       }
 
       const updatedCategory = await this.prisma.jobCategory.update({
@@ -98,15 +102,6 @@ export class JobCategoryService {
 
       return createSuccessResponse('Job category updated successfully', updatedCategory);
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2002') {
-          return this.errorHandler.handleError(
-            { code: 409, message: 'Job category with this name already exists' },
-            'JobCategoryService',
-            'update',
-          );
-        }
-      }
       return this.errorHandler.handleError(
         error,
         'JobCategoryService',
@@ -123,11 +118,7 @@ export class JobCategoryService {
       });
 
       if (!existingCategory) {
-        return this.errorHandler.handleError(
-          { code: 404, message: 'Job category not found' },
-          'JobCategoryService',
-          'remove',
-        );
+          return notFoundError('Job category not found')
       }
 
       await this.prisma.jobCategory.delete({
@@ -138,11 +129,7 @@ export class JobCategoryService {
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2003') {
-          return this.errorHandler.handleError(
-            { code: 400, message: 'Cannot delete job category as it is referenced by other records' },
-            'JobCategoryService',
-            'remove',
-          );
+          return badRequestError('Cannot delete job category as it is referenced by other records');
         }
       }
       return this.errorHandler.handleError(
