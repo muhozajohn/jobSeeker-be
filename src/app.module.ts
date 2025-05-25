@@ -8,13 +8,14 @@ import { UsersModule } from './users/users.module';
 import { CloudinaryModule } from './utils/cloudinary.module';
 import { UtilsModule } from './utils/utils.module';
 import { RecruiterModule } from './recruiter/recruiter.module';
+import { WorkerModule } from './worker/worker.module';
 
 
 
 @Module({
   imports: [ConfigModule.forRoot({
     isGlobal: true,
-  }), PrismaModule, AuthModule, UsersModule, CloudinaryModule, UtilsModule , AuthModule, RecruiterModule],
+  }), PrismaModule, AuthModule, UsersModule, CloudinaryModule, UtilsModule , AuthModule, RecruiterModule, WorkerModule],
   controllers: [AppController],
   providers: [AppService],
 })
