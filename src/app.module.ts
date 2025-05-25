@@ -7,13 +7,14 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { CloudinaryModule } from './utils/cloudinary.module';
 import { UtilsModule } from './utils/utils.module';
+import { RecruiterModule } from './recruiter/recruiter.module';
 
 
 
 @Module({
   imports: [ConfigModule.forRoot({
     isGlobal: true,
-  }), PrismaModule, AuthModule, UsersModule, CloudinaryModule, UtilsModule , AuthModule],
+  }), PrismaModule, AuthModule, UsersModule, CloudinaryModule, UtilsModule , AuthModule, RecruiterModule],
   controllers: [AppController],
   providers: [AppService],
 })

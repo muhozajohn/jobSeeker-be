@@ -42,7 +42,7 @@ enum Role {
 model Recruiter {
   id          Int           @id @default(autoincrement())
   userId      Int           @unique
-  user        User          @relation(fields: [userId], references: [id])
+ user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   companyName String?       // Company name if company recruiter
   type        RecruiterType
   description String?
