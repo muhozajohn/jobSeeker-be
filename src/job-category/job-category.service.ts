@@ -4,7 +4,7 @@ import { UpdateJobCategoryDto } from './dto/update-job-category.dto';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ErrorHandlerService } from '../utils/error.utils';
-import { badRequestError, createSuccessResponse, notFoundError } from '../utils/response.utils';
+import { badRequestError, createSuccessResponse, notFoundError , conflictError } from '../utils/response.utils';
 
 @Injectable()
 export class JobCategoryService {
@@ -22,8 +22,8 @@ export class JobCategoryService {
           name: createJobCategoryDto.name
         }
       });
-      if (!findName) {
-        return notFoundError('Job category with this name already exists')
+      if (findName) {
+        return conflictError(`Job category with this ${createJobCategoryDto.name} name already exists`)
       }
 
       const jobCategory = await this.prisma.jobCategory.create({

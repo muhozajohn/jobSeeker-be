@@ -169,6 +169,7 @@ export class RecruiterService {
                 email: true,
                 firstName: true,
                 lastName: true,
+                avatar: true,
               }
             }
           },
@@ -215,6 +216,7 @@ export class RecruiterService {
               email: true,
               firstName: true,
               lastName: true,
+              avatar: true,
             }
           }
         },
@@ -238,7 +240,7 @@ export class RecruiterService {
   async findByUserId(userId: number) {
     try {
       const recruiter = await this.prisma.recruiter.findUnique({
-        where: { userId },
+        where: { userId},
         include: {
           user: {
             select: {
@@ -246,6 +248,7 @@ export class RecruiterService {
               email: true,
               firstName: true,
               lastName: true,
+              avatar: true,
             }
           }
         },
@@ -393,6 +396,8 @@ export class RecruiterService {
               email: true,
               firstName: true,
               lastName: true,
+              avatar: true,
+
             }
           }
         },
@@ -429,6 +434,8 @@ export class RecruiterService {
               email: true,
               firstName: true,
               lastName: true,
+              avatar: true,
+              
             }
           }
         },

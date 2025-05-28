@@ -9,16 +9,20 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
+  Request
 } from '@nestjs/common';
 import { JobService } from './job.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+
 
 @ApiTags('Jobs')
 @Controller('jobs')
 export class JobController {
-  constructor(private readonly jobService: JobService) {}
+  constructor(private readonly jobService: JobService) { }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -37,6 +41,36 @@ export class JobController {
   findAll(@Query('activeOnly') activeOnly: string) {
     const showActiveOnly = activeOnly === 'false' ? false : true;
     return this.jobService.findAll(showActiveOnly);
+  }
+
+  @Get('myjobs')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get all jobs posted by me' })
+  @ApiQuery({
+    name: 'activeOnly',
+    required: false,
+    type: Boolean,
+    description: 'Filter by active status. true=active only, false=inactive only, undefined=all jobs'
+  })
+  @ApiResponse({ status: 200, description: 'Jobs retrieved successfully' })
+  findAllMyJobs(
+    @Query('activeOnly') activeOnly: string,
+    @Request() req
+  ) {
+
+    let showActiveOnly: boolean | undefined;
+
+    if (activeOnly === 'true') {
+      showActiveOnly = true;
+    } else if (activeOnly === 'false') {
+      showActiveOnly = false;
+    }
+
+
+    const recruiterId = req.user.id;
+    return this.jobService.findAllPostedByMe(showActiveOnly, recruiterId);
   }
 
   @Get(':id')
