@@ -67,6 +67,7 @@ export class JobService {
               firstName: true,
               lastName: true,
               email: true,
+              avatar: true,
             },
           },
         },
@@ -84,6 +85,54 @@ export class JobService {
       );
     }
   }
+ async findAllPostedByMe(activeOnly: boolean = true, recruiterId: number) {
+  try {
+    // Build the where condition properly
+    const where: Prisma.JobWhereInput = { recruiterId: recruiterId };
+    
+    // Add isActive condition based on activeOnly parameter
+    if (activeOnly === true) {
+      where.isActive = true;
+    } else if (activeOnly === false) {
+      where.isActive = false;
+    }
+
+    const jobs = await this.prisma.job.findMany({
+      where,
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            createdAt: true,
+          },
+        },
+        recruiter: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            avatar: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return createSuccessResponse('Jobs retrieved successfully', jobs);
+  } catch (error) {
+    return this.errorHandler.handleError(
+      error,
+      'JobService',
+      'findAllPostedByMe',
+      'Failed to retrieve jobs',
+    );
+  }
+}
 
   async findOne(id: number) {
     try {
