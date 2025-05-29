@@ -25,11 +25,11 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relationships
-  recruiter Recruiter?
-  worker    Worker?
-  jobs      Job[]      // Jobs created by recruiter
-  applications Application[] // Applications from workers
-  workAssignments WorkAssignment[] // Active work assignments for workers
+  recruiter            Recruiter?
+  worker               Worker?
+  jobs                 Job[] // Jobs created by recruiter
+  applications         Application[] // Applications from workers
+  workAssignments      WorkAssignment[] // Active work assignments for workers
   recruiterAssignments WorkAssignment[] @relation("RecruiterAssignments") // Assignments managed by recruiter
 }
 
@@ -42,8 +42,8 @@ enum Role {
 model Recruiter {
   id          Int           @id @default(autoincrement())
   userId      Int           @unique
- user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  companyName String?       // Company name if company recruiter
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName String? // Company name if company recruiter
   type        RecruiterType
   description String?
   location    String?
@@ -60,16 +60,16 @@ enum RecruiterType {
 }
 
 model Worker {
-  id          Int      @id @default(autoincrement())
-  userId      Int      @unique
-  user        User     @relation(fields: [userId], references: [id])
-  location    String?
-  experience  String?
-  skills      String?
-  resume      String?  // File path or URL
-  available   Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         Int      @id @default(autoincrement())
+  userId     Int      @unique
+  user       User     @relation(fields: [userId], references: [id])
+  location   String?
+  experience String?
+  skills     String?
+  resume     String? // File path or URL
+  available  Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model JobCategory {
@@ -83,25 +83,26 @@ model JobCategory {
 }
 
 model Job {
-  id          Int         @id @default(autoincrement())
-  title       String
-  description String
-  location    String?
-  salary      Int?
-  salaryType  SalaryType? @default(MONTHLY)
-  requirements String?
-  workingHours String?    // e.g., "8:00 AM - 12:00 PM" or "Flexible"
-  isActive    Boolean     @default(true)
-  allowMultiple Boolean   @default(true) // Allow worker to have multiple jobs
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id            Int         @id @default(autoincrement())
+  title         String
+  description   String
+  location      String?
+  salary        Int?
+  salaryType    SalaryType? @default(MONTHLY)
+  requirements  String?
+  workingHours  String? // e.g., "8:00 AM - 12:00 PM" or "Flexible"
+  isActive      Boolean     @default(true)
+  urgent        Boolean?     @default(true)
+  allowMultiple Boolean     @default(true) // Allow worker to have multiple jobs
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
   // Relationships
-  category     JobCategory @relation(fields: [categoryId], references: [id])
-  categoryId   Int
-  recruiter    User        @relation(fields: [recruiterId], references: [id])
-  recruiterId  Int
-  applications Application[]
+  category        JobCategory      @relation(fields: [categoryId], references: [id])
+  categoryId      Int
+  recruiter       User             @relation(fields: [recruiterId], references: [id])
+  recruiterId     Int
+  applications    Application[]
   workAssignments WorkAssignment[]
 }
 
@@ -115,16 +116,16 @@ enum SalaryType {
 
 model Application {
   id        Int               @id @default(autoincrement())
-  message   String?           // Cover message from worker
+  message   String? // Cover message from worker
   status    ApplicationStatus @default(PENDING)
   appliedAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
 
   // Relationships
-  job       Job    @relation(fields: [jobId], references: [id])
-  jobId     Int
-  worker    User   @relation(fields: [workerId], references: [id])
-  workerId  Int
+  job      Job  @relation(fields: [jobId], references: [id])
+  jobId    Int
+  worker   User @relation(fields: [workerId], references: [id])
+  workerId Int
 
   @@unique([jobId, workerId]) // Prevent duplicate applications
 }
@@ -138,27 +139,27 @@ enum ApplicationStatus {
 
 // New model to track active work assignments
 model WorkAssignment {
-  id          Int               @id @default(autoincrement())
-  startTime   DateTime?         // When work starts (e.g., 8:00 AM)
-  endTime     DateTime?         // When work ends (e.g., 12:00 PM)
-  workDate    DateTime          // Which date the work is for
-  status      AssignmentStatus  @default(ACTIVE)
-  notes       String?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id        Int              @id @default(autoincrement())
+  startTime DateTime? // When work starts (e.g., 8:00 AM)
+  endTime   DateTime? // When work ends (e.g., 12:00 PM)
+  workDate  DateTime // Which date the work is for
+  status    AssignmentStatus @default(ACTIVE)
+  notes     String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
 
   // Relationships
-  job         Job              @relation(fields: [jobId], references: [id])
+  job         Job  @relation(fields: [jobId], references: [id])
   jobId       Int
-  worker      User             @relation(fields: [workerId], references: [id])
+  worker      User @relation(fields: [workerId], references: [id])
   workerId    Int
-  recruiter   User             @relation("RecruiterAssignments", fields: [recruiterId], references: [id])
+  recruiter   User @relation("RecruiterAssignments", fields: [recruiterId], references: [id])
   recruiterId Int
 }
 
 enum AssignmentStatus {
-  ACTIVE      // Currently working this job
-  COMPLETED   // Finished the work
-  CANCELLED   // Assignment cancelled
-  PAUSED      // Temporarily paused
+  ACTIVE // Currently working this job
+  COMPLETED // Finished the work
+  CANCELLED // Assignment cancelled
+  PAUSED // Temporarily paused
 }

@@ -32,8 +32,8 @@ export class WorkerController {
   }
 
   @Get()
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Get all worker profiles (Admin only)' })
+  @Roles(Role.ADMIN , Role.RECRUITER)
+  @ApiOperation({ summary: 'Get all worker profiles (Admin , Recruiter only)' })
   @ApiResponse({ status: 200, description: 'List of all workers' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
@@ -83,7 +83,7 @@ export class WorkerController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN , Role.WORKER)
   @ApiOperation({ summary: 'Update worker profile by ID (Admin only)' })
   @ApiParam({ name: 'id', description: 'Worker ID' })
   @ApiBody({ type: UpdateWorkerDto })
