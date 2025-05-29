@@ -21,6 +21,7 @@ export class JobService {
           salaryType: createJobDto.salaryType || SalaryType.MONTHLY,
           isActive: createJobDto.isActive ?? true,
           allowMultiple: createJobDto.allowMultiple ?? true,
+          urgent: createJobDto.urgent ?? true,
         },
         include: {
           category: true,
@@ -54,9 +55,38 @@ export class JobService {
     }
   }
 
-  async findAll(activeOnly: boolean = true) {
+  async findAll(
+    activeOnly: boolean = true,
+    filters?: {
+      search?: string;
+      category?: string;
+      location?: string;
+      salaryMin?: number;
+      salaryMax?: number;
+      salaryType?: SalaryType;
+      allowMultiple?: boolean;
+    }
+  ) {
     try {
-      const where = activeOnly ? { isActive: true } : {};
+      const where: Prisma.JobWhereInput = {
+        isActive: activeOnly ? true : undefined,
+        AND: [
+          filters?.search
+            ? {
+              OR: [
+                { title: { contains: filters.search, mode: Prisma.QueryMode.insensitive } },
+              ],
+            }
+            : {},
+          filters?.category ? { category: { name: filters.category } } : {},
+          filters?.location ? { location: { contains: filters.location, mode: Prisma.QueryMode.insensitive } } : {},
+          filters?.salaryMin ? { salary: { gte: filters.salaryMin } } : {},
+          filters?.salaryMax ? { salary: { lte: filters.salaryMax } } : {},
+          filters?.salaryType ? { salaryType: filters.salaryType } : {},
+          filters?.allowMultiple !== undefined ? { allowMultiple: filters.allowMultiple } : {},
+        ].filter(condition => Object.keys(condition).length > 0),
+      };
+
       const jobs = await this.prisma.job.findMany({
         where,
         include: {
@@ -75,6 +105,7 @@ export class JobService {
           createdAt: 'desc',
         },
       });
+
       return createSuccessResponse('Jobs retrieved successfully', jobs);
     } catch (error) {
       return this.errorHandler.handleError(
@@ -85,54 +116,55 @@ export class JobService {
       );
     }
   }
- async findAllPostedByMe(activeOnly: boolean = true, recruiterId: number) {
-  try {
-    // Build the where condition properly
-    const where: Prisma.JobWhereInput = { recruiterId: recruiterId };
-    
-    // Add isActive condition based on activeOnly parameter
-    if (activeOnly === true) {
-      where.isActive = true;
-    } else if (activeOnly === false) {
-      where.isActive = false;
+
+  async findAllPostedByMe(activeOnly: boolean = true, recruiterId: number) {
+    try {
+      // Build the where condition properly
+      const where: Prisma.JobWhereInput = { recruiterId: recruiterId };
+
+      // Add isActive condition based on activeOnly parameter
+      if (activeOnly === true) {
+        where.isActive = true;
+      } else if (activeOnly === false) {
+        where.isActive = false;
+      }
+
+      const jobs = await this.prisma.job.findMany({
+        where,
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              createdAt: true,
+            },
+          },
+          recruiter: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              avatar: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      return createSuccessResponse('Jobs retrieved successfully', jobs);
+    } catch (error) {
+      return this.errorHandler.handleError(
+        error,
+        'JobService',
+        'findAllPostedByMe',
+        'Failed to retrieve jobs',
+      );
     }
-
-    const jobs = await this.prisma.job.findMany({
-      where,
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            createdAt: true,
-          },
-        },
-        recruiter: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            avatar: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    return createSuccessResponse('Jobs retrieved successfully', jobs);
-  } catch (error) {
-    return this.errorHandler.handleError(
-      error,
-      'JobService',
-      'findAllPostedByMe',
-      'Failed to retrieve jobs',
-    );
   }
-}
 
   async findOne(id: number) {
     try {

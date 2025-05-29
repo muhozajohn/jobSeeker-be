@@ -86,9 +86,18 @@ export class CreateJobDto {
   allowMultiple?: boolean;
 
   @ApiProperty({
+    example: true,
+    description: 'Indicates if job is urgent',
+    required: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  urgent?: boolean;
+
+  @ApiProperty({
     example: 1,
     description: 'ID of the job category',
-    required: true,
+    required: false,
   })
   @IsInt()
   @IsNotEmpty()

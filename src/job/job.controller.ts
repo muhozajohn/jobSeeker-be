@@ -17,6 +17,7 @@ import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { SalaryType } from '@prisma/client';
 
 
 @ApiTags('Jobs')
@@ -33,15 +34,47 @@ export class JobController {
     return this.jobService.create(createJobDto);
   }
 
+
+
   @Get()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get all jobs' })
-  @ApiQuery({ name: 'activeOnly', required: false, type: Boolean })
+  @ApiQuery({ name: 'search', required: false, description: 'Search term for job title' })
+  @ApiQuery({ name: 'category', required: false, description: 'Filter by category name' })
+  @ApiQuery({ name: 'location', required: false, description: 'Filter by location' })
+  @ApiQuery({ name: 'activeOnly', required: false, type: Boolean, description: 'Filter only active jobs' })
+  @ApiQuery({ name: 'salaryMin', required: false, type: Number, description: 'Minimum salary filter' })
+  @ApiQuery({ name: 'salaryMax', required: false, type: Number, description: 'Maximum salary filter' })
+  @ApiQuery({ name: 'salaryType', required: false, enum: SalaryType, description: 'Filter by salary type (HOURLY, DAILY, WEEKLY, MONTHLY, YEARLY)' })
+  @ApiQuery({ name: 'allowMultiple', required: false, type: Boolean, description: 'Filter by whether multiple candidates can be hired' })
   @ApiResponse({ status: 200, description: 'Jobs retrieved successfully' })
-  findAll(@Query('activeOnly') activeOnly: string) {
+  async findAll(
+    @Query('search') search?: string,
+    @Query('category') category?: string,
+    @Query('location') location?: string,
+    @Query('activeOnly') activeOnly: string = 'true',
+    @Query('salaryMin') salaryMin?: string,
+    @Query('salaryMax') salaryMax?: string,
+    @Query('salaryType') salaryType?: SalaryType,
+    @Query('allowMultiple') allowMultiple?: string
+  ) {
     const showActiveOnly = activeOnly === 'false' ? false : true;
-    return this.jobService.findAll(showActiveOnly);
+    const allowMultipleBool = allowMultiple ? allowMultiple === 'true' : undefined;
+    const minSalary = salaryMin ? parseInt(salaryMin) : undefined;
+    const maxSalary = salaryMax ? parseInt(salaryMax) : undefined;
+
+    return this.jobService.findAll(showActiveOnly, {
+      search,
+      category,
+      location,
+      salaryMin: minSalary,
+      salaryMax: maxSalary,
+      salaryType,
+      allowMultiple: allowMultipleBool
+    });
   }
+
+
 
   @Get('myjobs')
   @UseGuards(JwtAuthGuard)
