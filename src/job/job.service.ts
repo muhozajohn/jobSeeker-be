@@ -13,11 +13,19 @@ export class JobService {
     private readonly errorHandler: ErrorHandlerService,
   ) { }
 
-  async create(createJobDto: CreateJobDto) {
+  async create(createJobDto: CreateJobDto, recruiterId: number) {
+    // Validate recruiter exists
+    const existingRecruiter = await this.prisma.recruiter.findUnique({
+      where: { id: recruiterId },
+    });
+    if (!existingRecruiter) {
+      return notFoundError('Recruiter not found');
+    }
     try {
       const job = await this.prisma.job.create({
         data: {
           ...createJobDto,
+          recruiterId: recruiterId,
           salaryType: createJobDto.salaryType || SalaryType.MONTHLY,
           isActive: createJobDto.isActive ?? true,
           allowMultiple: createJobDto.allowMultiple ?? true,
@@ -31,6 +39,7 @@ export class JobService {
               firstName: true,
               lastName: true,
               email: true,
+              avatar: true,
             },
           },
         },
@@ -40,7 +49,7 @@ export class JobService {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2003') {
           return this.errorHandler.handleError(
-            { code: 404, message: 'Category or recruiter not found' },
+            { code: 404, message: 'Category  not found' },
             'JobService',
             'create',
           );
@@ -204,7 +213,14 @@ export class JobService {
     }
   }
 
-  async update(id: number, updateJobDto: UpdateJobDto) {
+  async update(id: number, updateJobDto: UpdateJobDto, recruiterId: number) {
+    // Validate recruiter exists
+    const existingRecruiter = await this.prisma.recruiter.findUnique({
+      where: { id: recruiterId },
+    });
+    if (!existingRecruiter) {
+      return notFoundError('Recruiter not found');
+    }
     try {
       const existingJob = await this.prisma.job.findUnique({
         where: { id },
@@ -225,7 +241,7 @@ export class JobService {
       }
 
       const existingrecruiter = await this.prisma.recruiter.findUnique({
-        where: { id: updateJobDto.recruiterId },
+        where: { id: recruiterId },
       });
 
       if (!existingrecruiter) {
@@ -235,7 +251,7 @@ export class JobService {
 
       const updatedJob = await this.prisma.job.update({
         where: { id },
-        data: updateJobDto,
+        data: {...updateJobDto , recruiterId: recruiterId},
         include: {
           category: true,
           recruiter: {
