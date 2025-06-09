@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsInt, IsEnum } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsInt, IsEnum, IsArray, ArrayNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { SalaryType } from '@prisma/client';
 
@@ -103,12 +103,24 @@ export class CreateJobDto {
   @IsNotEmpty()
   categoryId: number;
 
+  // @ApiProperty({
+  //   example: 2,
+  //   description: 'ID of the recruiter creating the job posting',
+  //   required: true,
+  // })
+  // @IsInt()
+  // @IsNotEmpty()
+  // recruiterId: number;
+
   @ApiProperty({
-    example: 2,
-    description: 'ID of the recruiter creating the job posting',
-    required: true,
+    example: ['Communication', 'Teamwork', 'Mathematics'],
+    description: 'List of skills required for the job',
+    required: false,
+    isArray: true,
+    type: String,
   })
-  @IsInt()
-  @IsNotEmpty()
-  recruiterId: number;
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  skills?: string[];
 }

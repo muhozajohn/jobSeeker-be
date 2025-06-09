@@ -90,6 +90,7 @@ model Job {
   salary        Int?
   salaryType    SalaryType? @default(MONTHLY)
   requirements  String?
+  skills        String[]
   workingHours  String? // e.g., "8:00 AM - 12:00 PM" or "Flexible"
   isActive      Boolean     @default(true)
   urgent        Boolean?     @default(true)

@@ -26,13 +26,16 @@ export class JobController {
   constructor(private readonly jobService: JobService) { }
 
   @Post()
+  @UseGuards(JwtAuthGuard)  
+  @ApiBearerAuth() 
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a new job' })
   @ApiResponse({ status: 201, description: 'Job created successfully' })
   @ApiResponse({ status: 404, description: 'Category or recruiter not found' })
-  create(@Body() createJobDto: CreateJobDto) {
-    return this.jobService.create(createJobDto);
-  }
+create(@Body() createJobDto: CreateJobDto, @Request() req) {
+  const recruiterId = req.user.id;  
+  return this.jobService.create(createJobDto, recruiterId);
+}
 
 
 
@@ -120,8 +123,9 @@ export class JobController {
   @ApiOperation({ summary: 'Update a job' })
   @ApiResponse({ status: 200, description: 'Job updated successfully' })
   @ApiResponse({ status: 404, description: 'Job not found' })
-  update(@Param('id') id: string, @Body() updateJobDto: UpdateJobDto) {
-    return this.jobService.update(+id, updateJobDto);
+  update(@Param('id') id: string, @Body() updateJobDto: UpdateJobDto , @Request() req) {
+  const recruiterId = req.user.id;  
+    return this.jobService.update(+id, updateJobDto, recruiterId);
   }
 
   @Delete(':id')
