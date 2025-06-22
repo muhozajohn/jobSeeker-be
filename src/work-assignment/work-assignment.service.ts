@@ -5,12 +5,14 @@ import { AssignmentStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ErrorHandlerService } from '../utils/error.utils';
 import { conflictError, createSuccessResponse, notFoundError } from '../utils/response.utils';
+import { SendEmailService } from 'src/send-email/send-email.service';
 
 @Injectable()
 export class WorkAssignmentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly errorHandler: ErrorHandlerService,
+    private readonly sendEmail: SendEmailService,
   ) { }
 
   async create(createWorkAssignmentDto: CreateWorkAssignmentDto) {
@@ -73,6 +75,7 @@ export class WorkAssignmentService {
               id: true,
               firstName: true,
               lastName: true,
+              email: true,
             },
           },
           recruiter: {
@@ -85,6 +88,16 @@ export class WorkAssignmentService {
         },
       });
 
+          // Send notification email to worker
+    await this.sendEmail.sendWorkAssignmentNotification(
+      assignment.worker.email,
+      `${assignment.worker.firstName} ${assignment.worker.lastName}`,
+      assignment.job.title,
+      assignment.startTime ?? undefined,
+      assignment.endTime ?? undefined,
+      assignment.workDate ?? undefined,
+      `${assignment.recruiter.firstName} ${assignment.recruiter.lastName}`
+    );
       return createSuccessResponse('Work assignment created successfully', assignment);
     } catch (error) {
       return this.errorHandler.handleError(
