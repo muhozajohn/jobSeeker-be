@@ -70,8 +70,8 @@ async create(
   file?: Express.Multer.File
 ): Promise<ServiceResponse> {
   try {
-    // await this.checkEmailExists(userData.email);
     this.validateUserRole(userData.role);
+    // await this.checkEmailExists(userData.email);
 
     const hashedPassword = await this.hashPassword(userData.password);
 
