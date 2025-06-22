@@ -5,11 +5,13 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { User, Prisma, Role } from '@prisma/client';
+import { User, Prisma, Role, Recruiter, Worker } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { CloudinaryService } from '../utils/cloudinary.service';
 import { ErrorHandlerService } from '../utils/error.utils';
 import { ServiceResponse, badRequestError, createSuccessResponse, notFoundError } from '../utils/response.utils';
+import { SendEmailService } from 'src/send-email/send-email.service';
+
 
 @Injectable()
 export class UsersService {
@@ -19,6 +21,7 @@ export class UsersService {
     private readonly prisma: PrismaService,
     private readonly cloudinaryService: CloudinaryService,
     private readonly errorHandler: ErrorHandlerService,
+    private readonly emailService: SendEmailService,
   ) {}
 
   // PRIVATE HELPER METHODS
@@ -63,6 +66,39 @@ export class UsersService {
     }
   }
 
+  private async sendWelcomeEmail(user: Prisma.UserGetPayload<{
+    include: { recruiter: true, worker: true }
+  }>) {
+    try {
+      const fullName = `${user.firstName} ${user.lastName}`;
+      
+      switch(user.role) {
+        case 'ADMIN':
+          await this.emailService.sendWelcomeEmailToAdmin(user.email, fullName);
+          break;
+        case 'RECRUITER':
+          const recruiterType = user.recruiter?.type || 'INDIVIDUAL';
+          await this.emailService.sendWelcomeEmailToRecruiter(
+            user.email, 
+            fullName, 
+            recruiterType as 'COMPANY' | 'GROUP' | 'INDIVIDUAL'
+          );
+          break;
+        case 'WORKER':
+          await this.emailService.sendWelcomeEmailToWorker(user.email, fullName);
+          break;
+        default:
+          // Handle unexpected roles or don't send email
+          console.warn(`No welcome email configured for role: ${user.role}`);
+          break;
+      }
+    } catch (emailError) {
+      // Log email sending error but don't fail the user creation
+      console.error('Failed to send welcome email:', emailError);
+      // Consider adding to error tracking system
+    }
+  }
+
   // PUBLIC API METHODS
 
 async create(
@@ -71,7 +107,7 @@ async create(
 ): Promise<ServiceResponse> {
   try {
     this.validateUserRole(userData.role);
-    // await this.checkEmailExists(userData.email);
+    await this.checkEmailExists(userData.email);
 
     const hashedPassword = await this.hashPassword(userData.password);
 
@@ -96,6 +132,18 @@ async create(
     // Remove password from response
     const { password, ...userResponse } = newUser;
 
+    // Convert recruiter/worker nulls to undefined for compatibility
+    const userForWelcomeEmail: Prisma.UserGetPayload<{
+      include: { recruiter: true, worker: true }
+    }> = {
+      ...newUser,
+      recruiter: newUser.recruiter ?? null,
+      worker: newUser.worker ?? null,
+    };
+
+    // Send welcome email based on user role
+    await this.sendWelcomeEmail(userForWelcomeEmail);
+
     return createSuccessResponse('User created successfully', userResponse);
   } catch (error) {
     return this.errorHandler.handleError(
@@ -106,6 +154,9 @@ async create(
     );
   }
 }
+
+
+
 
   async findAll(
     skip?: number,

@@ -4,13 +4,15 @@ import { UpdateApplicationDto } from './dto/update-application.dto';
 import { Prisma, ApplicationStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ErrorHandlerService } from '../utils/error.utils';
-import { conflictError, createSuccessResponse, notFoundError , badRequestError ,  } from '../utils/response.utils';
+import { conflictError, createSuccessResponse, notFoundError, } from '../utils/response.utils';
+import { SendEmailService } from 'src/send-email/send-email.service';
 
 @Injectable()
 export class ApplicationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly errorHandler: ErrorHandlerService,
+    private readonly emailService: SendEmailService,
   ) { }
 
   async create(createApplicationDto: CreateApplicationDto) {
@@ -66,6 +68,7 @@ export class ApplicationService {
                   id: true,
                   firstName: true,
                   lastName: true,
+                  email: true,
                 },
               },
             },
@@ -78,6 +81,17 @@ export class ApplicationService {
             },
           },
         },
+      });
+
+      // Send email notification to recruiter
+      await this.emailService.sendJobApplicationNotification(
+        application.job.recruiter.email,
+        `${application.job.recruiter.firstName} ${application.job.recruiter.lastName}`,
+        application.job.title,
+        `${application.worker.firstName} ${application.worker.lastName}`,
+        createApplicationDto.message || ''
+      ).catch(err => {
+        console.error('Failed to send application notification email:', err);
       });
 
       return createSuccessResponse('Application created successfully', application);
@@ -204,6 +218,13 @@ export class ApplicationService {
           job: {
             include: {
               category: true,
+              recruiter: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                },
+              },
             },
           },
           worker: {
@@ -211,10 +232,27 @@ export class ApplicationService {
               id: true,
               firstName: true,
               lastName: true,
+              email:true
             },
           },
         },
       });
+
+
+           // Send email notification based on status change
+      if (status === ApplicationStatus.ACCEPTED) {
+        await this.emailService.sendWorkAssignmentNotification(
+          updatedApplication.worker.email,
+          `${updatedApplication.worker.firstName} ${updatedApplication.worker.lastName}`,
+          updatedApplication.job.title,
+          undefined, // startTime
+          undefined, // endTime
+          undefined, // workDate
+          `${updatedApplication.job.recruiter.firstName} ${updatedApplication.job.recruiter.lastName}`
+        ).catch(err => {
+          console.error('Failed to send work assignment email:', err);
+        });
+      }
 
       return createSuccessResponse('Application updated successfully', updatedApplication);
     } catch (error) {

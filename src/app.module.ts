@@ -13,6 +13,7 @@ import { JobCategoryModule } from './job-category/job-category.module';
 import { JobModule } from './job/job.module';
 import { ApplicationModule } from './application/application.module';
 import { WorkAssignmentModule } from './work-assignment/work-assignment.module';
+import { SendEmailService } from './send-email/send-email.service';
 
 
 
@@ -21,6 +22,6 @@ import { WorkAssignmentModule } from './work-assignment/work-assignment.module';
     isGlobal: true,
   }), PrismaModule, AuthModule, UsersModule, CloudinaryModule, UtilsModule , AuthModule, RecruiterModule, WorkerModule, JobCategoryModule, JobModule, ApplicationModule, WorkAssignmentModule],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, SendEmailService],
 })
 export class AppModule { }
