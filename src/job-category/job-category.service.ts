@@ -91,7 +91,7 @@ export class JobCategoryService {
           name: updateJobCategoryDto.name
         }
       });
-      if (!findName) {
+      if (findName) {
         return notFoundError('Job category with this name already exists')
       }
 

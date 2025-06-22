@@ -65,39 +65,47 @@ export class UsersService {
 
   // PUBLIC API METHODS
 
-  async create(
-    userData: Prisma.UserCreateInput
-  ): Promise<ServiceResponse> {
-    try {
-      await this.checkEmailExists(userData.email);
-      this.validateUserRole(userData.role);
+async create(
+  userData: Prisma.UserCreateInput,
+  file?: Express.Multer.File
+): Promise<ServiceResponse> {
+  try {
+    // await this.checkEmailExists(userData.email);
+    this.validateUserRole(userData.role);
 
-      const hashedPassword = await this.hashPassword(userData.password);
+    const hashedPassword = await this.hashPassword(userData.password);
 
-      const newUser = await this.prisma.user.create({
-        data: {
-          ...userData,
-          password: hashedPassword,
-        },
-        include: {
-          recruiter: true,
-          worker: true,
-        }
-      });
-
-      // Remove password from response
-      const { password, ...userResponse } = newUser;
-
-      return createSuccessResponse('User created successfully', userResponse);
-    } catch (error) {
-      return this.errorHandler.handleError(
-        error,
-        'UsersService',
-        'create user',
-        'Failed to create user'
-      );
+    let avatarUrl: string | undefined;
+    if (file) {
+      avatarUrl = await this.cloudinaryService.uploadImage(file);
     }
+
+    const newUser = await this.prisma.user.create({
+      data: {
+        ...userData,
+        isActive: Boolean(userData.isActive),
+        password: hashedPassword,
+        ...(avatarUrl && { avatar: avatarUrl }), 
+      },
+      include: {
+        recruiter: true,
+        worker: true,
+      }
+    });
+
+    // Remove password from response
+    const { password, ...userResponse } = newUser;
+
+    return createSuccessResponse('User created successfully', userResponse);
+  } catch (error) {
+    return this.errorHandler.handleError(
+      error,
+      'UsersService',
+      'create user',
+      'Failed to create user'
+    );
   }
+}
 
   async findAll(
     skip?: number,
