@@ -40,24 +40,33 @@ import { Roles } from '../auth/roles.decorator';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post()
-  @ApiOperation({ summary: 'Create a new user' })
-  @ApiResponse({ 
-    status: HttpStatus.CREATED, 
-    description: 'User successfully created',
-    type: UserResponseDto 
-  })
-  @ApiResponse({ 
-    status: HttpStatus.CONFLICT, 
-    description: 'Email already exists' 
-  })
-  @ApiResponse({ 
-    status: HttpStatus.BAD_REQUEST, 
-    description: 'Invalid input data' 
-  })
-  @ApiBody({ type: CreateUserDto })
-  async create(@Body() createUserDto: CreateUserDto): Promise<ServiceResponse> {
-    return this.usersService.create({
+@Post()
+@UseInterceptors(FileInterceptor('avatar')) 
+@ApiOperation({ summary: 'Create a new user' })
+@ApiResponse({ 
+  status: HttpStatus.CREATED, 
+  description: 'User successfully created',
+  type: UserResponseDto 
+})
+@ApiResponse({ 
+  status: HttpStatus.CONFLICT, 
+  description: 'Email already exists' 
+})
+@ApiResponse({ 
+  status: HttpStatus.BAD_REQUEST, 
+  description: 'Invalid input data' 
+})
+@ApiConsumes('multipart/form-data') 
+@ApiBody({ 
+  type: CreateUserDto,
+  description: 'User data with optional avatar file'
+})
+async create(
+  @Body() createUserDto: CreateUserDto,
+  @UploadedFile() file?: Express.Multer.File, 
+): Promise<ServiceResponse> {
+  return this.usersService.create(
+    {
       email: createUserDto.email,
       password: createUserDto.password,
       firstName: createUserDto.firstName,
@@ -66,8 +75,10 @@ export class UsersController {
       avatar: createUserDto.avatar,
       role: createUserDto.role,
       isActive: createUserDto.isActive ?? true,
-    });
-  }
+    },
+    file 
+  );
+}
 
   @Get()
   @Roles(Role.ADMIN)

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsInt, IsEnum, IsArray, ArrayNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsInt, IsEnum, IsArray } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { SalaryType } from '@prisma/client';
 
