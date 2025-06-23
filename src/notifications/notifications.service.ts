@@ -2,6 +2,7 @@ import { SendEmailService } from '../send-email/send-email.service';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConnectionStatus } from '@prisma/client';
+import { conflictError } from 'src/utils/response.utils';
 
 @Injectable()
 export class NotificationsService {
@@ -27,7 +28,7 @@ export class NotificationsService {
     });
 
     if (existingRequest) {
-      throw new Error('Connection request already exists');
+      return conflictError('Connection request already exists');
     }
 
     // Create new request
