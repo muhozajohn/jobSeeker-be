@@ -16,20 +16,20 @@ import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } 
 export class WorkerController {
   constructor(private readonly workerService: WorkerService) {}
 
-  @Post()
-  @Roles(Role.WORKER)
-  @ApiOperation({ summary: 'Create a worker profile' })
-  @ApiBody({ type: CreateWorkerDto })
-  @ApiResponse({ status: 201, description: 'Worker profile created successfully'})
-  @ApiResponse({ status: 400, description: 'Bad request' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
-  @ApiResponse({ status: 409, description: 'Worker profile already exists for this user' })
-  async create(@Req() req, @Body() createWorkerDto: CreateWorkerDto) {
-    // Set userId from the authenticated user
-    const userId = req.user.id;
-    return this.workerService.create(createWorkerDto , userId);
-  }
+@Post()
+@Roles(Role.WORKER , Role.ADMIN)
+@ApiOperation({ summary: 'Create a worker profile' })
+@ApiBody({ type: CreateWorkerDto })
+@ApiResponse({ status: 201, description: 'Worker profile created successfully'})
+@ApiResponse({ status: 400, description: 'Bad request' })
+@ApiResponse({ status: 401, description: 'Unauthorized' })
+@ApiResponse({ status: 403, description: 'Forbidden' })
+@ApiResponse({ status: 409, description: 'Worker profile already exists for this user' })
+async create(@Req() req, @Body() createWorkerDto: CreateWorkerDto) {
+  // Use the userId from DTO if provided, otherwise use the authenticated user's ID
+  const userId = createWorkerDto.userId ?? req.user.id;
+  return this.workerService.create(createWorkerDto, userId);
+}
 
   @Get()
   @Roles(Role.ADMIN , Role.RECRUITER)

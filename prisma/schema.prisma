@@ -51,6 +51,9 @@ model Recruiter {
   verified    Boolean       @default(false)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+
+  // Add this relation field for ConnectionRequest
+  connectionRequests ConnectionRequest[]
 }
 
 enum RecruiterType {
@@ -70,6 +73,8 @@ model Worker {
   available  Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  ConnectionRequest ConnectionRequest[]
 }
 
 model JobCategory {
@@ -163,4 +168,27 @@ enum AssignmentStatus {
   COMPLETED // Finished the work
   CANCELLED // Assignment cancelled
   PAUSED // Temporarily paused
+}
+
+
+model ConnectionRequest {
+  id          Int                 @id @default(autoincrement())
+  recruiter   Recruiter           @relation(fields: [recruiterId], references: [id])
+  recruiterId Int
+  worker      Worker              @relation(fields: [workerId], references: [id])
+  workerId    Int
+  message     String?
+  status      ConnectionStatus    @default(PENDING)
+  adminNotes  String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@unique([recruiterId, workerId]) 
+}
+
+enum ConnectionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
 }

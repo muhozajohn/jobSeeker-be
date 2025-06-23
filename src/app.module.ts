@@ -14,13 +14,14 @@ import { JobModule } from './job/job.module';
 import { ApplicationModule } from './application/application.module';
 import { WorkAssignmentModule } from './work-assignment/work-assignment.module';
 import { SendEmailService } from './send-email/send-email.service';
+import { NotificationsModule } from './notifications/notifications.module';
 
 
 
 @Module({
   imports: [ConfigModule.forRoot({
     isGlobal: true,
-  }), PrismaModule, AuthModule, UsersModule, CloudinaryModule, UtilsModule , AuthModule, RecruiterModule, WorkerModule, JobCategoryModule, JobModule, ApplicationModule, WorkAssignmentModule],
+  }), PrismaModule, AuthModule, UsersModule, CloudinaryModule, UtilsModule , AuthModule, RecruiterModule, WorkerModule, JobCategoryModule, JobModule, ApplicationModule, WorkAssignmentModule, NotificationsModule],
   controllers: [AppController],
   providers: [AppService, SendEmailService],
 })

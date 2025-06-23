@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Recruiter , Worker } from '@prisma/client';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
@@ -15,7 +16,7 @@ export class SendEmailService {
     });
   }
 
-  private async sendMail(emailTemplate: { 
+  async sendMail(emailTemplate: { 
     emailTo: string; 
     subject: string; 
     message: string 
@@ -319,6 +320,77 @@ export class SendEmailService {
           <p>Best of luck!<br/>
           <strong>The CareBridge Team</strong></p>
       </div>`,
+    };
+
+    await this.sendMail(emailTemplate);
+  }
+  async notifyAdminAboutRecruiterInterest(
+    adminEmail: string,
+    adminName: string,
+    recruiter: Recruiter & { user: { firstName: string; lastName: string; email: string } },
+    worker: Worker & { user: { firstName: string; lastName: string; email: string } },
+    message?: string
+  ): Promise<void> {
+    const emailTemplate = {
+      emailTo: adminEmail,
+      subject: `New Connection Request: ${recruiter.user.firstName} ${recruiter.user.lastName} → ${worker.user.firstName} ${worker.user.lastName}`,
+      message: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 20px;">
+              <h1 style="color: #4a6bff; margin-bottom: 5px;">New Connection Request</h1>
+              <p style="color: #7f8c8d;">Hello ${adminName} Action required: Review this new connection request</p>
+          </div>
+
+          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0;">
+              <h2 style="color: #333; border-bottom: 1px solid #e0e0e0; padding-bottom: 10px;">Request Details</h2>
+              
+              <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+                  <div style="width: 48%; min-width: 250px; margin-bottom: 15px;">
+                      <h3 style="color: #4a6bff; margin-bottom: 10px;">Recruiter Information</h3>
+                      <p><strong>Name:</strong> ${recruiter.user.firstName} ${recruiter.user.lastName}</p>
+                      <p><strong>Company:</strong> ${recruiter.companyName || 'Not specified'}</p>
+                      <p><strong>Email:</strong> ${recruiter.user.email}</p>
+                      <p><strong>Location:</strong> ${recruiter.location || 'Not specified'}</p>
+                      ${recruiter.website ? `<p><strong>Website:</strong> <a href="${recruiter.website}" target="_blank">${recruiter.website}</a></p>` : ''}
+                  </div>
+                  
+                  <div style="width: 48%; min-width: 250px;">
+                      <h3 style="color: #4a6bff; margin-bottom: 10px;">Worker Information</h3>
+                      <p><strong>Name:</strong> ${worker.user.firstName} ${worker.user.lastName}</p>
+                      <p><strong>Email:</strong> ${worker.user.email}</p>
+                      <p><strong>Location:</strong> ${worker?.location || 'Not specified'}</p>
+                      <p><strong>Skills:</strong> ${worker.skills || 'Not specified'}</p>
+                      <p><strong>Experience:</strong> ${worker.experience || 'Not specified'}</p>
+                      ${worker.resume ? `<p><strong>Resume:</strong> <a href="${worker.resume}" target="_blank">View Resume</a></p>` : ''}
+                  </div>
+              </div>
+
+              ${message ? `
+              <div style="margin-top: 20px; padding: 15px; background-color: #fff; border-left: 4px solid #4a6bff;">
+                  <h4 style="margin-top: 0; color: #333;">Recruiter's Message:</h4>
+                  <p style="font-style: italic;">"${message}"</p>
+              </div>
+              ` : ''}
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.ADMIN_DASHBOARD_URL}/connections/pending" 
+                 style="background-color:#4a6bff; color:white; padding:12px 30px; text-decoration:none; border-radius:8px; font-weight:600;">
+                 Review Request
+              </a>
+          </div>
+
+          <div style="border-top: 1px solid #e0e0e0; padding-top: 20px; color: #7f8c8d; font-size: 14px;">
+              <p>This is an automated notification. Please do not reply directly to this email.</p>
+              <p>If you need assistance, contact our support team at <a href="mailto:${process.env.SUPPORT_EMAIL || 'support@carebridge.com'}">${process.env.SUPPORT_EMAIL || 'support@carebridge.com'}</a></p>
+          </div>
+
+          <p style="margin-top: 30px; text-align: center; color: #95a5a6;">
+              Best regards,<br>
+              <strong>The CareBridge Team</strong>
+          </p>
+      </div>
+      `,
     };
 
     await this.sendMail(emailTemplate);

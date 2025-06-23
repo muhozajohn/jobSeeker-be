@@ -54,4 +54,5 @@ export class CreateWorkerDto {
   @IsOptional()
   @IsBoolean()
   available?: boolean;
+  userId: number;
 }
