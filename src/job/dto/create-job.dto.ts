@@ -103,14 +103,14 @@ export class CreateJobDto {
   @IsNotEmpty()
   categoryId: number;
 
-  // @ApiProperty({
-  //   example: 2,
-  //   description: 'ID of the recruiter creating the job posting',
-  //   required: true,
-  // })
-  // @IsInt()
-  // @IsNotEmpty()
-  // recruiterId: number;
+  @ApiProperty({
+    example: 2,
+    description: 'ID of the recruiter creating the job posting',
+    required: true,
+  })
+  @IsInt()
+  @IsNotEmpty()
+  recruiterId: number;
 
   @ApiProperty({
     example: ['Communication', 'Teamwork', 'Mathematics'],
