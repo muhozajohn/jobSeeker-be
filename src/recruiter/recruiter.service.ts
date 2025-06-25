@@ -4,13 +4,14 @@ import { UpdateRecruiterDto } from './dto/update-recruiter.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { ErrorHandlerService } from '../utils/error.utils';
 import { Prisma } from '@prisma/client';
-import { 
-  createSuccessResponse, 
-  notFoundError, 
-  badRequestError, 
-  conflictError,  
+import {
+  createSuccessResponse,
+  notFoundError,
+  badRequestError,
+  conflictError,
 } from 'src/utils/response.utils';
 import * as bcrypt from 'bcryptjs';
+import { SendEmailService } from 'src/send-email/send-email.service';
 
 @Injectable()
 export class RecruiterService {
@@ -19,11 +20,86 @@ export class RecruiterService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly errorHandler: ErrorHandlerService,
-  ) {}
+    private readonly emailService: SendEmailService,
+  ) { }
 
-   private async hashPassword(password: string): Promise<string> {
-      return bcrypt.hash(password, this.SALT_ROUNDS);
-    }
+  private async hashPassword(password: string): Promise<string> {
+    return bcrypt.hash(password, this.SALT_ROUNDS);
+  }
+
+  // async create(createRecruiterDto: CreateRecruiterDto) {
+  //   try {
+  //     // Check if email already exists
+  //     const existingUser = await this.prisma.user.findUnique({
+  //       where: { email: createRecruiterDto.email }
+  //     });
+
+  //     if (existingUser) {
+  //       return conflictError('User with this email already exists');
+  //     }
+
+  //      const hashedPassword = await this.hashPassword(createRecruiterDto.password);
+
+  //     // Create user and recruiter in a transaction
+  //     const result = await this.prisma.$transaction(async (prisma) => {
+  //       // Create user first
+  //       const user = await prisma.user.create({
+  //         data: {
+  //           email: createRecruiterDto.email,
+  //           password: hashedPassword, 
+  //           firstName: createRecruiterDto.firstName,
+  //           lastName: createRecruiterDto.lastName,
+  //           phone: createRecruiterDto.phone,
+  //           avatar: createRecruiterDto.avatar,
+  //           role: 'RECRUITER', 
+  //         }
+  //       });
+
+  //       // Create recruiter with the new user's ID
+  //       const recruiter = await prisma.recruiter.create({
+  //         data: {
+  //           userId: user.id,
+  //           companyName: createRecruiterDto.companyName,
+  //           type: createRecruiterDto.type,
+  //           description: createRecruiterDto.description,
+  //           location: createRecruiterDto.location,
+  //           website: createRecruiterDto.website,
+  //           verified: createRecruiterDto.verified || false,
+  //         },
+  //         include: {
+  //           user: {
+  //             select: {
+  //               id: true,
+  //               email: true,
+  //               firstName: true,
+  //               lastName: true,
+  //               phone: true,
+  //               avatar: true,
+  //               role: true,
+  //             }
+  //           }
+  //         }
+  //       });
+
+  //       return recruiter;
+  //     });
+
+  //     return createSuccessResponse('Recruiter and user created successfully', result);
+  //   } catch (error) {
+  //     if (error instanceof Prisma.PrismaClientKnownRequestError) {
+  //       if (error.code === 'P2002') {
+  //         return conflictError('User with this email already exists');
+  //       }
+  //     }
+
+  //     return this.errorHandler.handleError(
+  //       error,
+  //       'RecruiterService',
+  //       'create',
+  //       'Failed to create recruiter and user'
+  //     );
+  //   }
+  // }
 
   async create(createRecruiterDto: CreateRecruiterDto) {
     try {
@@ -36,7 +112,7 @@ export class RecruiterService {
         return conflictError('User with this email already exists');
       }
 
-       const hashedPassword = await this.hashPassword(createRecruiterDto.password);
+      const hashedPassword = await this.hashPassword(createRecruiterDto.password);
 
       // Create user and recruiter in a transaction
       const result = await this.prisma.$transaction(async (prisma) => {
@@ -44,12 +120,12 @@ export class RecruiterService {
         const user = await prisma.user.create({
           data: {
             email: createRecruiterDto.email,
-            password: hashedPassword, 
+            password: hashedPassword,
             firstName: createRecruiterDto.firstName,
             lastName: createRecruiterDto.lastName,
             phone: createRecruiterDto.phone,
             avatar: createRecruiterDto.avatar,
-            role: 'RECRUITER', 
+            role: 'RECRUITER',
           }
         });
 
@@ -82,6 +158,20 @@ export class RecruiterService {
         return recruiter;
       });
 
+      // Send welcome email to the recruiter
+      try {
+        const fullName = `${result.user.firstName} ${result.user.lastName}`;
+        await this.emailService.sendWelcomeEmailToRecruiter(
+          result.user.email,
+          fullName,
+          result.type as 'COMPANY' | 'GROUP' | 'INDIVIDUAL'
+        );
+      } catch (emailError) {
+        // Log email sending error but don't fail the recruiter creation
+        console.error('Failed to send welcome email to recruiter:', emailError);
+        // Consider adding to error tracking system
+      }
+
       return createSuccessResponse('Recruiter and user created successfully', result);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -106,7 +196,7 @@ export class RecruiterService {
   }) {
     try {
       const skip = (page - 1) * limit;
-      
+
       const where: Prisma.RecruiterWhereInput = {};
 
       if (filters?.type) {
@@ -240,7 +330,7 @@ export class RecruiterService {
   async findByUserId(userId: number) {
     try {
       const recruiter = await this.prisma.recruiter.findUnique({
-        where: { userId},
+        where: { userId },
         include: {
           user: {
             select: {
@@ -435,7 +525,7 @@ export class RecruiterService {
               firstName: true,
               lastName: true,
               avatar: true,
-              
+
             }
           }
         },
